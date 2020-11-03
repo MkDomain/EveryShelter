@@ -1,5 +1,5 @@
 # EveryShelter
-Free, open source, servers files
+Free, open source, software to upload, and serve files
 
 # Features
 - AES-256 encrypted storage
