@@ -1,5 +1,5 @@
-# ImageShelter
-Free, open source, encrypted image shelter.
+# EveryShelter
+Free, open source, servers files
 
 # Features
 - AES-256 encrypted storage
