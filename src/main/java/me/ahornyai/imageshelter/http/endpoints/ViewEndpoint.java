@@ -116,6 +116,7 @@ public class ViewEndpoint implements Handler {
             ctx.res.addHeader("Content-Type", contentType);
         }
 
+        ctx.header("Content-Length", String.valueOf(decrypted.length));
         ctx.result(decrypted);
     }
 }
