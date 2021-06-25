@@ -20,38 +20,31 @@
  * SOFTWARE.
  */
 
-package me.ahornyai.imageshelter.http;
+package me.ahornyai.imageshelter.http.endpoints;
 
-import com.google.gson.Gson;
-import io.javalin.Javalin;
-import io.javalin.plugin.json.JavalinJson;
-import me.ahornyai.imageshelter.http.endpoints.IndexEndpoint;
-import me.ahornyai.imageshelter.http.endpoints.UploadEndpoint;
-import me.ahornyai.imageshelter.http.endpoints.ViewEndpoint;
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
+import lombok.extern.slf4j.Slf4j;
+import me.ahornyai.imageshelter.ImageShelter;
+import org.jetbrains.annotations.NotNull;
 
-public class HttpHandler {
-    private static final Gson GSON = new Gson();
-    private final Javalin javalin;
+import java.io.File;
 
-    public HttpHandler(int port) {
-        this.javalin = Javalin.create().start(port);;
+@Slf4j
+public class IndexEndpoint implements Handler {
+    @Override
+    public void handle(@NotNull Context ctx) {
+        int imageCount = 0;
 
-        setupJavalinJson();
-        makeEndpoints();
-    }
+        File folder = new File(ImageShelter.getInstance().getConfig().getUploadFolder());
 
-    private void setupJavalinJson() {
-        JavalinJson.setFromJsonMapper(GSON::fromJson);
-        JavalinJson.setToJsonMapper(GSON::toJson);
-    }
+        if (folder.exists() && folder.isDirectory()) {
+            File[] files = folder.listFiles();
 
-    private void makeEndpoints() {
-        javalin.get("/:file/:key", new ViewEndpoint());
-        javalin.post("/upload", new UploadEndpoint());
-        javalin.get("/", new IndexEndpoint());
-    }
+            if (files != null)
+                imageCount = files.length;
+        }
 
-    public void stop() {
-        javalin.stop();
+        ctx.html("<h3>Stored images: " + imageCount + "</h3><a href=\"https://github.com/ahornyai/ImageShelter\">GitHub</a>");
     }
 }
