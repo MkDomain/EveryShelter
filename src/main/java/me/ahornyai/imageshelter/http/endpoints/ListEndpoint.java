@@ -20,34 +20,33 @@
  * SOFTWARE.
  */
 
-package me.ahornyai.imageshelter.utils;
+package me.ahornyai.imageshelter.http.endpoints;
 
-import org.apache.commons.io.IOUtils;
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
+import lombok.extern.slf4j.Slf4j;
+import me.ahornyai.imageshelter.ImageShelter;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
+import java.io.File;
 
-public class CompressUtil {
+@Slf4j
+public class ListEndpoint implements Handler {
+    @Override
+    public void handle(@NotNull Context ctx) {
+        File folder = new File(ImageShelter.getInstance().getConfig().getUploadFolder());
 
-    public static byte[] compress(byte[] data) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(data.length);
-        GZIPOutputStream gzip = new GZIPOutputStream(bos);
-        byte[] compressed;
-        gzip.write(data);
-        gzip.close();
-        compressed = bos.toByteArray();
-        bos.close();
+        StringBuilder builder = new StringBuilder();
 
-        return compressed;
+        if (folder.exists() && folder.isDirectory()) {
+            File[] files = folder.listFiles();
+
+            if (files == null) ctx.html("<h1>No files stored</h1>");
+            for (File file : files) {
+                builder.append("<a href=\"/").append(file.getName()).append("/KEY\">").append(file.getName()).append("</a><br>");
+            }
+        }
+
+        ctx.html(builder.toString());
     }
-
-    public static byte[] decompress(byte[] compressed) throws IOException {
-        ByteArrayInputStream bis = new ByteArrayInputStream(compressed);
-        GZIPInputStream gis = new GZIPInputStream(bis);
-        return IOUtils.toByteArray(gis);
-    }
-
 }

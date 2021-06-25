@@ -28,15 +28,16 @@ import lombok.extern.slf4j.Slf4j;
 import me.ahornyai.imageshelter.ImageShelter;
 import me.ahornyai.imageshelter.http.responses.ErrorResponse;
 import me.ahornyai.imageshelter.utils.AESUtil;
-import me.ahornyai.imageshelter.utils.CompressUtil;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.CipherInputStream;
 import javax.crypto.SecretKey;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.InvalidKeyException;
+import java.util.zip.GZIPInputStream;
 
 @Slf4j
 public class ViewEndpoint implements Handler {
@@ -47,76 +48,55 @@ public class ViewEndpoint implements Handler {
         if (EXPECTED_PATH == null)
             EXPECTED_PATH = new File(ImageShelter.getInstance().getConfig().getUploadFolder()).getCanonicalPath();
 
+        //Get the file, and the decryption key
         String fileParam = ctx.pathParam("file");
-        String keyParam = ctx.pathParam("key");
-
         File file = new File(ImageShelter.getInstance().getConfig().getUploadFolder(), fileParam);
 
         if (!file.getCanonicalPath().startsWith(EXPECTED_PATH)) {
-            ctx.redirect("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
-
+            ctx.json(new ErrorResponse("FILE_DOES_NOT_EXIST", "This file does not exist.")).status(404);
             return;
         }
 
         if (!file.exists()) {
-            ctx.json(new ErrorResponse("FILE_DOES_NOT_EXIST","This file does not exist."));
-
+            ctx.json(new ErrorResponse("FILE_DOES_NOT_EXIST", "This file does not exist.")).status(404);
             return;
         }
 
         if (!file.canRead()) {
-            ctx.json(new ErrorResponse("READ_PERMISSION","I don't have read permission to uploads/" + fileParam + " file."));
-
+            ctx.json(new ErrorResponse("READ_PERMISSION", "File is not readable.")).status(500);
             return;
         }
 
-        SecretKey secretKey;
-        byte[] encrypted;
-        byte[] decrypted;
-        byte[] decompressed;
-
-        try {
-            secretKey = AESUtil.getKeyFromString(keyParam);
-        }catch (Exception ex) {
-            ctx.json(new ErrorResponse("BAD_KEY_FORMAT", "Bad key format."));
-            return;
-        }
-
-        try {
-            encrypted = FileUtils.readFileToByteArray(file);
-        }catch (Exception ex) {
-            log.debug("File read error. ", ex);
-
-            ctx.json(new ErrorResponse("READ_ERROR", "Failed to read this file."));
-            return;
-        }
-
-        try {
-            decompressed = CompressUtil.decompress(encrypted);
-        }catch (IOException ex) {
-            String requestID = RandomStringUtils.randomAlphanumeric(16);
-            log.error("Decompressing error (Request id: " + requestID + "):", ex);
-
-            ctx.json(new ErrorResponse("UNEXPECTED_ERROR", "Unexpected error with decompressing. If you are the server owner please open a github issue with the exception. (Request id: " + requestID + ")"));
-            return;
-        }
-
-        try {
-            decrypted = AESUtil.decrypt(decompressed, secretKey);
-        }catch (Exception ex) {
-            log.debug("Decryption error. ", ex);
-
-            ctx.json(new ErrorResponse("DECRYPT_ERROR", "Failed to decrypt (Bad key?)."));
-            return;
-        }
-
-        String contentType = Files.probeContentType(file.toPath());
-
+        String contentType = Files.probeContentType(Paths.get(file.getAbsolutePath().endsWith(".gz") ? file.getAbsolutePath().substring(0, file.getAbsolutePath().length() - 3) : file.getAbsolutePath()));
         if (contentType != null) {
-            ctx.res.addHeader("Content-Type", contentType);
+            ctx.contentType(contentType);
         }
 
-        ctx.header("Content-Length", String.valueOf(decrypted.length));
-        ctx.result(decrypted);
+        try {
+            InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+            boolean shouldDecompress = file.getName().endsWith(".gz");
+
+            if (ImageShelter.getInstance().getConfig().isEncrypt()) {
+                SecretKey secretKey;
+                try {
+                    String keyParam = ctx.pathParam("key");
+                    secretKey = AESUtil.getKeyFromString(keyParam);
+                } catch (Exception ex) {
+                    ctx.json(new ErrorResponse("BAD_KEY_FORMAT", "Bad key format."));
+                    return;
+                }
+
+                inputStream = new CipherInputStream(inputStream, AESUtil.getDecryptCipher(secretKey));
+            }
+            if (shouldDecompress) inputStream = new GZIPInputStream(inputStream);
+            ctx.result(inputStream);
+        } catch (Exception ex) {
+            if (ex instanceof InvalidKeyException || ex instanceof BadPaddingException) {
+                ctx.json(new ErrorResponse("INVALID_KEY", "Invalid key provided!")).status(400);
+            } else {
+                ctx.json(new ErrorResponse("FILE_READ_ERROR", "Could not read the file!")).status(500);
+                log.error("File read error:", ex);
+            }
+        }
     }
 }

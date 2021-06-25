@@ -42,7 +42,7 @@ public class ConfigHandler {
 
         try {
             this.config = new Toml().read(file).to(Config.class);
-        }catch (Exception ex) {
+        } catch (Exception ex) {
             this.config = new Config();
 
             TomlWriter writer = new TomlWriter();

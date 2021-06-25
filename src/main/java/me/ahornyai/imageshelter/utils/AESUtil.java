@@ -52,22 +52,21 @@ public class AESUtil {
         return Base64.getUrlEncoder().encodeToString(key.getEncoded());
     }
 
-    public byte[] encrypt(byte[] byteArray, SecretKey key) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        SecretKeySpec keySpec = new SecretKeySpec(key.getEncoded(), "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(INIT_VECTOR);
-        cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-
-        return cipher.doFinal(byteArray);
+    public Cipher getEncryptCipher(SecretKey key) throws Exception {
+        return getCipher(key, Cipher.ENCRYPT_MODE);
     }
 
-    public byte[] decrypt(byte[] byteArray, SecretKey key) throws Exception {
+    public Cipher getDecryptCipher(SecretKey key) throws Exception {
+        return getCipher(key, Cipher.DECRYPT_MODE);
+    }
+
+    private Cipher getCipher(SecretKey key, int mode) throws Exception {
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         SecretKeySpec keySpec = new SecretKeySpec(key.getEncoded(), "AES");
         IvParameterSpec ivSpec = new IvParameterSpec(INIT_VECTOR);
-        cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
+        cipher.init(mode, keySpec, ivSpec);
 
-        return cipher.doFinal(byteArray);
+        return cipher;
     }
 
 }

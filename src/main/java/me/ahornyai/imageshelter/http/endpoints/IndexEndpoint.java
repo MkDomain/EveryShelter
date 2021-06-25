@@ -45,6 +45,6 @@ public class IndexEndpoint implements Handler {
                 imageCount = files.length;
         }
 
-        ctx.html("<h3>Stored images: " + imageCount + "</h3><a href=\"https://github.com/ahornyai/ImageShelter\">GitHub</a>");
+        ctx.html("<h3>Stored files: " + imageCount + "</h3><br>" + (ImageShelter.getInstance().getConfig().isListingEnabled() ? "<a href=\"/list\">List images</a> " : "") + "<a href=\"https://github.com/MkDomain/EveryShelter/\">GitHub</a>");
     }
 }

@@ -26,12 +26,26 @@ import lombok.Getter;
 import org.apache.commons.lang3.RandomStringUtils;
 
 @Getter
+@SuppressWarnings("FieldMayBeFinal")
 public class Config {
-    private final Integer port = 8282;
+    private Integer port = 8282;
 
-    private final String[] secrets = new String[]{RandomStringUtils.randomAlphanumeric(32)};
+    private String[] secrets = new String[]{RandomStringUtils.randomAlphanumeric(32)};
 
-    private final String[] allowedExtensions = new String[]{"png", "jpg", "jpeg", "bmp", "gif"};
+    private String[] allowedExtensions = new String[]
+            {"png", "jpg", "jpeg", "bmp", "gif", "webp",
+                    "txt", "js", "css", "html", "java", "py", "rar", "zip", "yaml", "yml", "ini", "md",
+                    "mov", "mp4", "webm", "mkv", "flv", "vob", "ogg", "drc", "giv", "avi", "wmv", "yuv", "m4p", "m4v", "mpg", "mpeg", "m2v", "3gp", "3g2",
+                    "aa", "aac", "alac", "flac", "m4b", "m4p", ".mp3", "opus", "raw", "voc", "wav"
+            };
 
-    private final String uploadFolder = "uploads";
+    private String[] compressedExtensions = new String[]{"bmp", "txt", "js", "css", "html", "java", "py", "yaml", "yml", "ini", "md", "raw"};
+
+    private String uploadFolder = "uploads";
+
+    private boolean encrypt = true;
+
+    private boolean backupKeys = false;
+
+    private boolean listingEnabled = false;
 }

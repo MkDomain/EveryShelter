@@ -22,12 +22,14 @@
 
 package me.ahornyai.imageshelter;
 
+import io.javalin.Javalin;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import me.ahornyai.imageshelter.config.Config;
 import me.ahornyai.imageshelter.config.ConfigHandler;
 import me.ahornyai.imageshelter.http.HttpHandler;
 import org.apache.commons.lang3.time.StopWatch;
+import org.slf4j.helpers.NOPLogger;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +37,8 @@ import java.util.concurrent.TimeUnit;
 @Getter
 @Slf4j
 public class ImageShelter {
-    @Getter private static ImageShelter instance;
+    @Getter
+    private static ImageShelter instance;
     private final HttpHandler httpHandler;
     private ConfigHandler configHandler;
 
@@ -43,10 +46,12 @@ public class ImageShelter {
         instance = this;
         StopWatch startWatch = StopWatch.createStarted();
 
+        Javalin.log = NOPLogger.NOP_LOGGER;
+
         try {
             log.info("Loading config...");
             this.configHandler = new ConfigHandler();
-        }catch (IOException ex) {
+        } catch (IOException ex) {
             log.error("Failed to load config. Stopping...");
             ex.printStackTrace();
             System.exit(1);
@@ -57,18 +62,19 @@ public class ImageShelter {
         Runtime.getRuntime().addShutdownHook(new Thread(this::onStop));
 
         startWatch.stop();
-        log.info("ImageShelter started at " + startWatch.getTime(TimeUnit.MILLISECONDS) + " ms.");
-    }
-
-    public void onStop() {
-        httpHandler.stop();
-    }
-
-    public Config getConfig() {
-        return configHandler.getConfig();
+        log.info("ImageShelter started in " + startWatch.getTime(TimeUnit.MILLISECONDS) + " ms.");
     }
 
     public static void main(String... args) {
         new ImageShelter();
+    }
+
+    public void onStop() {
+        httpHandler.stop();
+        log.info("Successfully stopped");
+    }
+
+    public Config getConfig() {
+        return configHandler.getConfig();
     }
 }

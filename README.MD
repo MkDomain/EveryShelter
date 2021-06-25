@@ -2,12 +2,11 @@
 Free, open source, software to upload, and serve files
 
 # Features
-- AES-256 encrypted storage
+- Automatic encryption with AES-CBC-256
 - JSON responses
-- Extra compressing with GZIP
-- Random file names
+- Extra compressing with GZIP (if needed)
 - Configurable
-- Not only an image storage, you can store other files.
+- You can upload all sorts of files
 
 # License
 ```
